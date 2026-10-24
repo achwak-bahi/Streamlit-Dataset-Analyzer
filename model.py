@@ -2,7 +2,7 @@ import io
 import json
 import tempfile
 from pathlib import Path
-
+import db
 import pandas as pd
 
 import tp
@@ -459,6 +459,10 @@ def analyze_dataset(dataset_name):
     if dataset_name not in list_datasets():
         raise DatasetError("The selected dataset is not available.")
 
+    saved = db.get_result(dataset_name)
+    if saved is not None:
+        return saved
+
     path = DATA_DIR / dataset_name
     try:
         content = path.read_bytes()
@@ -466,7 +470,9 @@ def analyze_dataset(dataset_name):
         raise DatasetError("The selected dataset could not be read.") from exc
 
     dataframe = _read_dataframe(path.name, content)
-    return _run_dataframe(path.name, dataframe)
+    result = _run_dataframe(path.name, dataframe)
+    db.save_result(dataset_name, result)
+    return result
 
 
 def analyze_uploaded_file(filename, content):
